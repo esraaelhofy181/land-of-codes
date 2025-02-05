@@ -1,0 +1,136 @@
+import streamlit as st
+from PIL import Image
+
+# إعداد الواجهة الرئيسية
+st.set_page_config(page_title="Code Wizards Game", layout="wide")
+
+# تحميل الصور الافتراضية
+login_image = Image.open("/mnt/data/WhatsApp Image 2025-02-04 at 13.26.09_bdc6f271.jpg")
+home_image = Image.open("/mnt/data/WhatsApp Image 2025-02-04 at 13.26.10_451adac7.jpg")
+
+# تخزين الخلفية المختارة
+if "background" not in st.session_state:
+    st.session_state["background"] = ""
+
+def set_background():
+    if st.session_state["background"]:
+        st.markdown(
+            f"""
+            <style>
+            .stApp {{
+                background-image: url('{st.session_state["background"]}');
+                background-size: cover;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+# شاشة تسجيل الدخول
+def login_page():
+    set_background()
+    st.image(login_image, use_column_width=True)
+    st.subheader("Main Login")
+    email = st.text_input("Email", "")
+    password = st.text_input("Password", "", type="password")
+    if st.button("Login"):
+        st.session_state["logged_in"] = True
+        st.experimental_rerun()
+
+# الشاشة الرئيسية بعد تسجيل الدخول
+def home_page():
+    set_background()
+    st.image(home_image, use_column_width=True)
+    st.write("## Welcome to Code Wizards Game!")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("Start Game", key="start"):
+            st.session_state["stage"] = "level_1"
+            st.experimental_rerun()
+    with col2:
+        if st.button("Settings", key="settings"):
+            st.session_state["stage"] = "settings"
+            st.experimental_rerun()
+    with col3:
+        if st.button("Choose Character", key="character"):
+            st.session_state["stage"] = "character_selection"
+            st.experimental_rerun()
+
+# شاشة إعدادات اللعبة
+def settings_page():
+    set_background()
+    st.title("Settings")
+    st.slider("Music Volume", 0, 100, 50)
+    st.slider("Sound Effects", 0, 100, 50)
+    language = st.radio("Language", ["English", "Arabic"])
+    uploaded_file = st.file_uploader("Upload Background Image", type=["png", "jpg", "jpeg"])
+    bg_url = st.text_input("Or Enter Background Image URL")
+    if uploaded_file:
+        st.session_state["background"] = uploaded_file
+    elif bg_url:
+        st.session_state["background"] = bg_url
+    if st.button("Back"):
+        st.session_state["stage"] = "home"
+        st.experimental_rerun()
+
+# شاشة اختيار الشخصية
+def character_selection_page():
+    set_background()
+    st.title("Character Selection")
+    st.write("Choose your favorite character!")
+    if st.button("Back"):
+        st.session_state["stage"] = "home"
+        st.experimental_rerun()
+
+# مستوى اللعبة الأول
+def level_1():
+    set_background()
+    st.title("Level 1 - Code Wizards")
+    st.write("Write a program to calculate (13 + 1) / 2")
+    code = st.text_area("Enter your code here:")
+    if st.button("Run Code"):
+        try:
+            result = eval(code)
+            if result == 7:
+                st.success("Correct! You unlocked the red car!")
+                st.session_state["stage"] = "level_completed"
+                st.experimental_rerun()
+            else:
+                st.error("Wrong answer! Try again.")
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+# شاشة إكمال المستوى
+def level_completed():
+    set_background()
+    st.title("Level Completed!")
+    st.image("https://upload.wikimedia.org/wikipedia/commons/4/4f/Celebration_Icon.png", width=200)
+    st.success("Well done! You completed the adventure!")
+    if st.button("Next Level"):
+        st.session_state["stage"] = "level_2"
+        st.experimental_rerun()
+    if st.button("Back to Home"):
+        st.session_state["stage"] = "home"
+        st.experimental_rerun()
+
+# التأكد من أن الجلسة مخزنة بشكل صحيح
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+if "stage" not in st.session_state:
+    st.session_state["stage"] = "login"
+
+# التوجيه بين الصفحات
+if not st.session_state["logged_in"]:
+    login_page()
+elif st.session_state["stage"] == "home":
+    home_page()
+elif st.session_state["stage"] == "settings":
+    settings_page()
+elif st.session_state["stage"] == "character_selection":
+    character_selection_page()
+elif st.session_state["stage"] == "level_1":
+    level_1()
+elif st.session_state["stage"] == "level_completed":
+    level_completed()
+
+st.sidebar.button("Restart Game", on_click=lambda: st.session_state.update({"logged_in": False, "stage": "login"}))
